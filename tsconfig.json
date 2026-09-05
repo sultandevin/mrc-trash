@@ -1,0 +1,3 @@
+{
+  "extends": "@mom/config/tsconfig.base.json"
+}
