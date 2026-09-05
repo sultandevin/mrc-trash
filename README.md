@@ -111,8 +111,8 @@ The database enforces a shared budget of 20 login attempts per 15-minute window 
 - Sync production env: bun run env:production
 - Dry-run check (no upload): bun run deploy:check
 - Preview deploy: bun run deploy
-- Production deploy: bun run deploy:prod
-  Vercel Services share project environment variables, but deploys do not upload local `.env` files automatically. Link the project with `vercel link`, then run the env sync command before your first deploy (otherwise the deployment starts with no env vars), or pass one-off envs with `vercel deploy -e KEY=value`.
+- Production deploys run through Vercel CI/CD when changes reach the configured production branch.
+  Vercel Services share project environment variables, but deploys do not upload local `.env` files automatically. Link the project with `vercel link`, then run the env sync command before the next CI/CD deployment (otherwise the deployment starts with no env vars).
   Pass Vercel CLI flags to the env sync command directly, for example: `bun run env:production --scope your-team`.
 
 For more details, see the guide on [Deploying to Vercel](https://www.better-t-stack.dev/docs/guides/vercel).
@@ -149,5 +149,4 @@ mom/
 - `bun run env:preview`: Sync local env files to the Vercel preview environment
 - `bun run env:production`: Sync local env files to the Vercel production environment
 - `bun run deploy`: Create a Vercel preview deployment
-- `bun run deploy:prod`: Deploy to Vercel production
 - `bun run deploy:check`: Dry-run a deploy to preview framework detection and included files without uploading

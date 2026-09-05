@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -10,9 +10,21 @@ import {
   Logout02Icon,
   Refresh01Icon,
 } from "@hugeicons/core-free-icons";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@mom/ui/components/alert-dialog";
 import { Button } from "@mom/ui/components/button";
 import { Input } from "@mom/ui/components/input";
 import { Label } from "@mom/ui/components/label";
+import { Skeleton } from "@mom/ui/components/skeleton";
 import { listAdminSubmissions, loginAdmin, logoutAdmin } from "@/features/admin/actions";
 import { SubmissionsTable } from "@/features/admin/submissions-table";
 
@@ -60,14 +72,24 @@ function AdminPage() {
     mutationFn: () => logout(),
     retry: false,
     onMutate: async () => {
-      // Stop in-flight reads and discard every cached page immediately.
+      // Stop in-flight reads and discard inactive cached pages while logout completes.
       await queryClient.cancelQueries({ queryKey: ["admin"] });
-      queryClient.setQueriesData({ queryKey: ["admin"] }, { authenticated: false });
       queryClient.removeQueries({ queryKey: ["admin"], type: "inactive" });
     },
     onSuccess: () => window.location.replace("/admin"),
   });
   const result = submissions.isError ? undefined : submissions.data;
+  const isCheckingSession = submissions.isPending && !result;
+  const isTransitioning = isCheckingSession || loginMutation.isPending || logoutMutation.isPending;
+  const title = logoutMutation.isPending
+    ? "Data warga"
+    : loginMutation.isPending
+      ? "Masuk admin"
+      : result?.authenticated
+        ? "Data warga"
+        : result
+          ? "Masuk admin"
+          : "Admin";
   const error = logoutMutation.isError
     ? "Belum berhasil keluar. Silakan coba lagi."
     : loginMutation.isError
@@ -83,129 +105,201 @@ function AdminPage() {
 
   return (
     <main className="mx-auto min-h-svh max-w-5xl px-5 py-10 sm:px-8 sm:py-16">
-      <header className="mb-10 flex flex-wrap items-start justify-between gap-4 border-b pb-6">
+      <header className="mb-10 flex min-h-24 flex-wrap items-start justify-between gap-4 border-b pb-6">
         <div>
           <p className="mb-2 text-sm text-muted-foreground">Pendataan sampah organik</p>
-          <h1 className="text-balance text-3xl font-semibold tracking-tight">
-            {result?.authenticated ? "Data warga" : "Masuk admin"}
-          </h1>
+          <h1 className="text-balance text-3xl font-semibold tracking-tight">{title}</h1>
         </div>
-        {result?.authenticated && (
-          <Button
-            className="min-h-11"
-            variant="outline"
-            disabled={logoutMutation.isPending}
-            onClick={() => logoutMutation.mutate()}
+        {result?.authenticated && !isCheckingSession ? (
+          <AlertDialog>
+            <AlertDialogTrigger render={<Button className="min-h-11" variant="outline" />}>
+              <HugeiconsIcon
+                icon={Logout02Icon}
+                strokeWidth={2}
+                className="size-4"
+                aria-hidden="true"
+              />
+              Keluar
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Keluar dari admin?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Anda perlu memasukkan kata sandi lagi untuk kembali melihat data warga.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel className="min-h-11">Batal</AlertDialogCancel>
+                <AlertDialogAction className="min-h-11" onClick={() => logoutMutation.mutate()}>
+                  Keluar
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        ) : (
+          <Link
+            to="/"
+            className="inline-flex min-h-11 items-center gap-1.5 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
           >
             <HugeiconsIcon
-              icon={logoutMutation.isPending ? Loading03Icon : Logout02Icon}
+              icon={ArrowLeft01Icon}
               strokeWidth={2}
-              className={logoutMutation.isPending ? "size-4 motion-safe:animate-spin" : "size-4"}
+              className="size-4"
               aria-hidden="true"
             />
-            {logoutMutation.isPending ? "Keluar…" : "Keluar"}
-          </Button>
+            Kembali ke formulir
+          </Link>
         )}
       </header>
 
-      {logoutMutation.isError && (
-        <Button className="mb-4 min-h-11" onClick={() => logoutMutation.mutate()}>
-          <HugeiconsIcon icon={Refresh01Icon} strokeWidth={2} aria-hidden="true" />
-          Coba keluar lagi
-        </Button>
-      )}
-      {error && (
-        <p
-          role="alert"
-          className="mb-6 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive"
-        >
-          {error}
-        </p>
-      )}
+      {isTransitioning ? (
+        <AdminLoading
+          label={
+            logoutMutation.isPending
+              ? "Mengakhiri sesi…"
+              : loginMutation.isPending
+                ? "Memeriksa akses…"
+                : "Memeriksa sesi admin…"
+          }
+        />
+      ) : result?.authenticated ? (
+        <>
+          {logoutMutation.isError && (
+            <Button className="mb-4 min-h-11" onClick={() => logoutMutation.mutate()}>
+              <HugeiconsIcon icon={Refresh01Icon} strokeWidth={2} aria-hidden="true" />
+              Coba keluar lagi
+            </Button>
+          )}
+          {error && (
+            <p
+              role="alert"
+              className="mb-6 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive"
+            >
+              {error}
+            </p>
+          )}
 
-      {!result &&
-        (error ? (
+          <section aria-label="Jawaban warga" className="space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-muted-foreground">
+                Jawaban terbaru ditampilkan lebih dulu · Waktu WIB
+              </p>
+              <Button
+                className="min-h-11"
+                variant="outline"
+                disabled={submissions.isFetching}
+                onClick={() => submissions.refetch()}
+              >
+                <HugeiconsIcon
+                  icon={submissions.isFetching ? Loading03Icon : Refresh01Icon}
+                  strokeWidth={2}
+                  className={submissions.isFetching ? "size-4 motion-safe:animate-spin" : "size-4"}
+                  aria-hidden="true"
+                />
+                Muat ulang
+              </Button>
+            </div>
+            <SubmissionsTable
+              rows={result.rows}
+              page={page}
+              hasMore={result.hasMore}
+              onPageChange={setPage}
+            />
+          </section>
+        </>
+      ) : result ? (
+        <section className="max-w-sm" aria-label="Masuk admin">
+          {error && (
+            <p
+              role="alert"
+              className="mb-6 rounded-md bg-destructive/5 p-3 text-sm text-destructive"
+            >
+              {error}
+            </p>
+          )}
+
+          {logoutMutation.isError && (
+            <Button className="mb-6 min-h-11" onClick={() => logoutMutation.mutate()}>
+              <HugeiconsIcon icon={Refresh01Icon} strokeWidth={2} aria-hidden="true" />
+              Coba keluar lagi
+            </Button>
+          )}
+
+          {!result.authenticated && (
+            <form onSubmit={signIn} className="space-y-5" aria-busy={loginMutation.isPending}>
+              <div className="space-y-2.5">
+                <Label htmlFor="admin-password">Kata sandi</Label>
+                <Input
+                  id="admin-password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  maxLength={1024}
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  disabled={loginMutation.isPending}
+                />
+              </div>
+              <Button
+                type="submit"
+                className="min-h-11 w-full rounded-md"
+                disabled={loginMutation.isPending}
+              >
+                <HugeiconsIcon
+                  icon={loginMutation.isPending ? Loading03Icon : Login01Icon}
+                  strokeWidth={2}
+                  className={loginMutation.isPending ? "size-4 motion-safe:animate-spin" : "size-4"}
+                  aria-hidden="true"
+                />
+                {loginMutation.isPending ? "Memeriksa…" : "Masuk"}
+              </Button>
+            </form>
+          )}
+        </section>
+      ) : (
+        <section className="max-w-sm" aria-label="Admin tidak dapat dibuka">
+          <p role="alert" className="mb-6 rounded-md bg-destructive/5 p-3 text-sm text-destructive">
+            {error}
+          </p>
           <Button className="min-h-11" onClick={() => submissions.refetch()}>
             <HugeiconsIcon icon={Refresh01Icon} strokeWidth={2} aria-hidden="true" />
             Coba lagi
           </Button>
-        ) : (
-          <p role="status" className="text-muted-foreground">
-            Membuka halaman admin…
-          </p>
-        ))}
-
-      {result && !result.authenticated && (
-        <form onSubmit={signIn} className="max-w-sm space-y-5">
-          <p className="text-pretty text-muted-foreground">
-            Masukkan kata sandi untuk melihat jawaban warga.
-          </p>
-          <div className="space-y-2">
-            <Label htmlFor="admin-password">Kata sandi</Label>
-            <Input
-              id="admin-password"
-              type="password"
-              autoComplete="current-password"
-              required
-              maxLength={1024}
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              className="min-h-11"
-              disabled={loginMutation.isPending}
-            />
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Tetap masuk selama 30 hari di perangkat ini. Gunakan perangkat pribadi dan keluar
-            setelah memakai perangkat bersama.
-          </p>
-          <Button type="submit" className="min-h-11 w-full" disabled={loginMutation.isPending}>
-            <HugeiconsIcon
-              icon={loginMutation.isPending ? Loading03Icon : Login01Icon}
-              strokeWidth={2}
-              className={loginMutation.isPending ? "size-4 motion-safe:animate-spin" : "size-4"}
-              aria-hidden="true"
-            />
-            {loginMutation.isPending ? "Memeriksa…" : "Masuk"}
-          </Button>
-          <a
-            href="/"
-            className="inline-flex min-h-11 items-center text-sm underline underline-offset-4"
-          >
-            <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} aria-hidden="true" />
-            Kembali ke formulir
-          </a>
-        </form>
-      )}
-
-      {result?.authenticated && (
-        <section aria-label="Jawaban warga" className="space-y-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-muted-foreground">
-              Jawaban terbaru ditampilkan lebih dulu · Waktu WIB
-            </p>
-            <Button
-              className="min-h-11"
-              variant="outline"
-              disabled={submissions.isFetching}
-              onClick={() => submissions.refetch()}
-            >
-              <HugeiconsIcon
-                icon={submissions.isFetching ? Loading03Icon : Refresh01Icon}
-                strokeWidth={2}
-                className={submissions.isFetching ? "size-4 motion-safe:animate-spin" : "size-4"}
-                aria-hidden="true"
-              />
-              Muat ulang
-            </Button>
-          </div>
-          <SubmissionsTable
-            rows={result.rows}
-            page={page}
-            hasMore={result.hasMore}
-            onPageChange={setPage}
-          />
         </section>
       )}
     </main>
+  );
+}
+
+function AdminLoading({ label }: { label: string }) {
+  return (
+    <section aria-label={label} aria-busy="true">
+      <div className="mb-6 flex items-center gap-2 text-sm text-muted-foreground" role="status">
+        <HugeiconsIcon
+          icon={Loading03Icon}
+          strokeWidth={2}
+          className="size-4 motion-safe:animate-spin"
+          aria-hidden="true"
+        />
+        {label}
+      </div>
+      <div className="overflow-hidden rounded-xl border" aria-hidden="true">
+        <div className="grid grid-cols-4 gap-6 border-b bg-muted/40 px-4 py-4">
+          {Array.from({ length: 4 }, (_, index) => (
+            <Skeleton key={index} className="h-4 rounded-md" />
+          ))}
+        </div>
+        {Array.from({ length: 4 }, (_, row) => (
+          <div key={row} className="grid grid-cols-4 gap-6 border-b px-4 py-5 last:border-b-0">
+            {Array.from({ length: 4 }, (_, column) => (
+              <Skeleton
+                key={column}
+                className={`h-4 rounded-md ${column === 1 || column === 2 ? "w-full" : "w-3/4"}`}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }

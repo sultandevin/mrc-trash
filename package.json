@@ -40,7 +40,6 @@
     "env:preview": "tsx scripts/sync-vercel-env.ts preview",
     "env:production": "tsx scripts/sync-vercel-env.ts production",
     "deploy": "vercel deploy",
-    "deploy:prod": "vercel deploy --prod",
     "deploy:check": "vercel deploy --dry",
     "check": "oxlint && oxfmt --write"
   },

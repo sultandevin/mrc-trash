@@ -126,7 +126,6 @@ export function SubmissionForm({ save }: { save: Save }) {
           aria-invalid={!!errors[id]}
           aria-describedby={errors[id] ? `${id}-error` : undefined}
           onChange={(event) => setValues((previous) => ({ ...previous, [id]: event.target.value }))}
-          className="h-12 rounded-md border-input bg-card text-base shadow-none md:text-base"
         />
         {errors[id] && (
           <p id={`${id}-error`} role="alert" className="text-sm text-destructive">
