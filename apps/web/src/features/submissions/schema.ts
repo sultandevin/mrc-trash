@@ -1,19 +1,10 @@
 import { z } from "zod";
 
-// Replace these three placeholder methods when the neighborhood list is ready.
 export const compostingMethods = [
-  {
-    id: "compost-bin",
-    label: "Komposter",
-  },
-  {
-    id: "biopore",
-    label: "Lubang biopori",
-  },
-  {
-    id: "worm-bin",
-    label: "Kompos cacing",
-  },
+  { id: "teba", label: "Teba" },
+  { id: "biopori", label: "Biopori" },
+  { id: "bag-composter", label: "Bag composter" },
+  { id: "galon-composter", label: "Galon composter" },
   { id: "other", label: "Lainnya" },
 ] as const;
 
@@ -21,28 +12,36 @@ export const submissionSchema = z
   .object({
     id: z.uuid(),
     name: z.string().trim().min(1, "Masukkan nama.").max(120, "Nama maksimal 120 karakter."),
-    roadName: z
+    address: z
       .string()
       .trim()
-      .min(1, "Masukkan nama jalan.")
-      .max(200, "Nama jalan maksimal 200 karakter."),
-    block: z
-      .string()
-      .trim()
-      .min(1, "Masukkan blok dan nomor rumah.")
-      .max(60, "Blok dan nomor rumah maksimal 60 karakter."),
-    rt: z
-      .string()
-      .trim()
-      .regex(/^\d{1,3}$/, "Masukkan RT dengan 1–3 angka."),
-    rw: z
-      .string()
-      .trim()
-      .regex(/^\d{1,3}$/, "Masukkan RW dengan 1–3 angka."),
+      .min(1, "Masukkan nomor rumah dan nama jalan.")
+      .max(260, "Alamat maksimal 260 karakter."),
+    rt: z.enum(
+      [
+        "01",
+        "02",
+        "03",
+        "04",
+        "05",
+        "06",
+        "07",
+        "08",
+        "09",
+        "10",
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16",
+      ],
+      { message: "Pilih RT." },
+    ),
     methods: z
-      .array(z.enum(["compost-bin", "biopore", "worm-bin", "other"]))
+      .array(z.enum(["teba", "biopori", "bag-composter", "galon-composter", "other"]))
       .min(1, "Pilih minimal satu metode.")
-      .max(4, "Pilih maksimal empat metode.")
+      .max(5, "Pilih maksimal lima metode.")
       .refine(
         (values) => new Set(values).size === values.length,
         "Pilih setiap metode hanya sekali.",
@@ -56,5 +55,5 @@ export const submissionSchema = z
 
 export type SubmissionInput = z.infer<typeof submissionSchema>;
 export type FieldErrors = Partial<
-  Record<"name" | "roadName" | "block" | "rt" | "rw" | "methods" | "otherMethod", string>
+  Record<"name" | "address" | "rt" | "methods" | "otherMethod", string>
 >;

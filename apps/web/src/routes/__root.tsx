@@ -2,6 +2,7 @@ import { Toaster } from "@mom/ui/components/sonner";
 import { HeadContent, Outlet, Scripts, createRootRouteWithContext } from "@tanstack/react-router";
 
 import appCss from "../index.css?url";
+import fontsCss from "@mom/ui/fonts.css?url";
 import { TooltipProvider } from "@mom/ui/components/tooltip";
 import { QueryProvider } from "@/components/query-provider";
 
@@ -22,6 +23,10 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
       },
     ],
     links: [
+      {
+        rel: "stylesheet",
+        href: fontsCss,
+      },
       {
         rel: "stylesheet",
         href: appCss,

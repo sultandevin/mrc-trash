@@ -17,25 +17,16 @@ import {
 type Save = (options: {
   data: SubmissionInput;
 }) => Promise<{ success: true; id: string } | { success: false; message: string }>;
-type TextField = "name" | "roadName" | "block" | "rt" | "rw" | "otherMethod";
-const emptyValues = { name: "", roadName: "", block: "", rt: "", rw: "", otherMethod: "" };
+type TextField = "name" | "address" | "otherMethod";
+const emptyValues = { name: "", address: "", rt: "", otherMethod: "" };
 const stepFields: (keyof FieldErrors)[][] = [
-  [],
-  ["name"],
-  ["roadName", "block", "rt", "rw"],
+  ["name", "address", "rt"],
   ["methods", "otherMethod"],
 ];
-const titles = [
-  "Pendataan sampah organik",
-  "Siapa nama Anda?",
-  "Di mana alamat Anda?",
-  "Bagaimana Anda mengolahnya?",
-];
+const titles = ["Pendataan Pengolahan Sampah Organik", "Pengolahan sampah organik"];
 const descriptions = [
-  "Ceritakan cara Anda mengolah sampah organik di rumah. Mulai dari nama, alamat, lalu metode yang digunakan.",
-  "Tuliskan nama lengkap Anda.",
-  "Pisahkan setiap bagian alamat agar mudah dicatat.",
-  "Pilih satu atau lebih metode pengolahan sampah organik yang digunakan di rumah.",
+  "Lengkapi nama dan alamat tempat tinggal Anda.",
+  "Pilih satu atau lebih cara yang digunakan di rumah.",
 ];
 
 export function SubmissionForm({ save }: { save: Save }) {
@@ -62,7 +53,7 @@ export function SubmissionForm({ save }: { save: Save }) {
   });
   const saved = submission.isSuccess;
   const error = submission.error?.message;
-  const progress = saved ? 3 : Math.max(0, step - 1);
+  const progress = saved ? 2 : step;
 
   function goTo(next: number) {
     setDirection(next > step ? 1 : -1);
@@ -86,7 +77,7 @@ export function SubmissionForm({ save }: { save: Save }) {
     if (!parsed.success) {
       for (const issue of parsed.error.issues) {
         const field = issue.path[0] as keyof FieldErrors;
-        if (step === 3 || stepFields[step].includes(field)) nextErrors[field] ??= issue.message;
+        if (step === 1 || stepFields[step].includes(field)) nextErrors[field] ??= issue.message;
       }
     }
     if (Object.keys(nextErrors).length) {
@@ -100,7 +91,7 @@ export function SubmissionForm({ save }: { save: Save }) {
       setErrors(nextErrors);
       return;
     }
-    if (step < 3) {
+    if (step < 1) {
       goTo(step + 1);
       return;
     }
@@ -121,7 +112,7 @@ export function SubmissionForm({ save }: { save: Save }) {
           placeholder={placeholder}
           maxLength={maxLength}
           autoComplete={id === "name" ? "name" : "off"}
-          inputMode={id === "rt" || id === "rw" ? "numeric" : "text"}
+          inputMode="text"
           required
           aria-invalid={!!errors[id]}
           aria-describedby={errors[id] ? `${id}-error` : undefined}
@@ -141,23 +132,21 @@ export function SubmissionForm({ save }: { save: Save }) {
       <div className="mb-12 sm:mb-16">
         <div className="mb-3 flex justify-between gap-4 text-xs text-muted-foreground">
           <span>Pendataan warga</span>
-          <span className="tabular-nums">
-            {saved ? "Selesai" : step === 0 ? "3 langkah sederhana" : `Langkah ${step} dari 3`}
-          </span>
+          <span className="tabular-nums">{saved ? "Selesai" : `Langkah ${step + 1} dari 2`}</span>
         </div>
         <div
           role="progressbar"
           aria-label="Progres pengisian"
           aria-valuemin={0}
-          aria-valuemax={3}
+          aria-valuemax={2}
           aria-valuenow={progress}
-          aria-valuetext={saved ? "Selesai" : `${progress} dari 3 langkah selesai`}
+          aria-valuetext={saved ? "Selesai" : `${progress} dari 2 langkah selesai`}
           className="h-1 overflow-hidden rounded-full bg-muted"
         >
           <m.div
             className="h-full origin-left bg-primary"
             initial={false}
-            animate={{ scaleX: progress / 3 }}
+            animate={{ scaleX: progress / 2 }}
             transition={{ duration: reducedMotion ? 0 : 0.3 }}
           />
         </div>
@@ -225,119 +214,136 @@ export function SubmissionForm({ save }: { save: Save }) {
               <p className="mt-4 text-pretty leading-7 text-muted-foreground">
                 {descriptions[step]}
               </p>
-              {step === 0 ? (
-                <div className="mt-8">
-                  <Button className="h-11 rounded-md px-6" onClick={() => goTo(1)}>
-                    Mulai <ArrowRight aria-hidden="true" />
-                  </Button>
-                </div>
-              ) : (
-                <form
-                  className="mt-8"
-                  onSubmit={handleSubmit}
-                  noValidate
-                  aria-busy={submission.isPending}
-                >
-                  <fieldset disabled={submission.isPending} className="space-y-6">
-                    {step === 1 && field("name", "Nama lengkap", "Nama lengkap Anda", 120)}
-                    {step === 2 && (
-                      <>
-                        {field("roadName", "Nama jalan", "Contoh: Jalan Melati", 200)}
-                        {field("block", "Blok / nomor rumah", "Contoh: A2, nomor 23", 60)}
-                        <div className="grid grid-cols-2 gap-4">
-                          {field("rt", "RT", "Contoh: 001", 3)}
-                          {field("rw", "RW", "Contoh: 005", 3)}
-                        </div>
-                      </>
-                    )}
-                    {step === 3 && (
-                      <>
-                        <fieldset aria-describedby={errors.methods ? "methods-error" : undefined}>
-                          <legend className="sr-only">Metode pengolahan sampah organik</legend>
-                          <div className="space-y-1">
-                            {compostingMethods.map((method) => (
-                              <Label
-                                key={method.id}
-                                htmlFor={method.id}
-                                className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-md px-2 py-2 transition-colors ${methods.includes(method.id) ? "bg-secondary text-secondary-foreground" : "hover:bg-muted"}`}
-                              >
-                                <Checkbox
-                                  id={method.id}
-                                  checked={methods.includes(method.id)}
-                                  aria-invalid={!!errors.methods}
-                                  className="size-[18px] rounded-[3px] border-input bg-card"
-                                  onCheckedChange={(checked) =>
-                                    setMethods((previous) =>
-                                      checked
-                                        ? [...previous, method.id]
-                                        : previous.filter((id) => id !== method.id),
-                                    )
-                                  }
-                                />
-                                <span className="text-base font-normal">{method.label}</span>
-                              </Label>
-                            ))}
-                          </div>
-                          {errors.methods && (
-                            <p
-                              id="methods-error"
-                              role="alert"
-                              className="mt-2 text-sm text-destructive"
-                            >
-                              {errors.methods}
-                            </p>
-                          )}
-                        </fieldset>
-                        {methods.includes("other") &&
-                          field(
-                            "otherMethod",
-                            "Metode lainnya",
-                            "Tuliskan metode yang digunakan",
-                            200,
-                          )}
-                      </>
-                    )}
-                    {error && (
-                      <p
-                        role="alert"
-                        className="rounded-md bg-destructive/5 p-3 text-sm text-destructive"
-                      >
-                        {error}
-                      </p>
-                    )}
-                    <div className="flex items-center justify-between gap-4 pt-4">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        className="h-11 rounded-md text-muted-foreground"
-                        onClick={() => goTo(step - 1)}
-                      >
-                        <ArrowLeft aria-hidden="true" /> Kembali
-                      </Button>
-                      <Button
-                        type="submit"
-                        className="h-11 rounded-md px-6"
-                        disabled={submission.isPending}
-                      >
-                        {submission.isPending ? (
-                          <>
-                            <LoaderCircle className="motion-safe:animate-spin" aria-hidden="true" />{" "}
-                            Menyimpan…
-                          </>
-                        ) : step === 3 ? (
-                          <>
-                            Kirim data <ArrowRight aria-hidden="true" />
-                          </>
-                        ) : (
-                          <>
-                            Lanjut <ArrowRight aria-hidden="true" />
-                          </>
+              <form
+                className="mt-8"
+                onSubmit={handleSubmit}
+                noValidate
+                aria-busy={submission.isPending}
+              >
+                <fieldset disabled={submission.isPending} className="space-y-6">
+                  {step === 0 && (
+                    <>
+                      {field("name", "Nama", "Nama lengkap Anda", 120)}
+                      {field("address", "Nomor rumah + jalan", "Contoh: No. 12, Jalan Melati", 260)}
+                      <div className="space-y-2.5">
+                        <Label htmlFor="rt">RT</Label>
+                        <select
+                          id="rt"
+                          name="rt"
+                          value={values.rt}
+                          required
+                          aria-invalid={!!errors.rt}
+                          aria-describedby={errors.rt ? "rt-error" : undefined}
+                          className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/50 h-10 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
+                          onChange={(event) =>
+                            setValues((previous) => ({ ...previous, rt: event.target.value }))
+                          }
+                        >
+                          <option value="">Pilih RT</option>
+                          {Array.from({ length: 16 }, (_, index) =>
+                            String(index + 1).padStart(2, "0"),
+                          ).map((rt) => (
+                            <option key={rt} value={rt}>
+                              RT {rt}
+                            </option>
+                          ))}
+                        </select>
+                        {errors.rt && (
+                          <p id="rt-error" role="alert" className="text-sm text-destructive">
+                            {errors.rt}
+                          </p>
                         )}
-                      </Button>
-                    </div>
-                  </fieldset>
-                </form>
-              )}
+                      </div>
+                    </>
+                  )}
+                  {step === 1 && (
+                    <>
+                      <fieldset aria-describedby={errors.methods ? "methods-error" : undefined}>
+                        <legend className="sr-only">Metode pengolahan sampah organik</legend>
+                        <div className="space-y-1">
+                          {compostingMethods.map((method) => (
+                            <Label
+                              key={method.id}
+                              htmlFor={method.id}
+                              className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-md px-2 py-2 transition-colors ${methods.includes(method.id) ? "bg-secondary text-secondary-foreground" : "hover:bg-muted"}`}
+                            >
+                              <Checkbox
+                                id={method.id}
+                                checked={methods.includes(method.id)}
+                                aria-invalid={!!errors.methods}
+                                className="size-[18px] rounded-[3px] border-input bg-card"
+                                onCheckedChange={(checked) =>
+                                  setMethods((previous) =>
+                                    checked
+                                      ? [...previous, method.id]
+                                      : previous.filter((id) => id !== method.id),
+                                  )
+                                }
+                              />
+                              <span className="text-base font-normal">{method.label}</span>
+                            </Label>
+                          ))}
+                        </div>
+                        {errors.methods && (
+                          <p
+                            id="methods-error"
+                            role="alert"
+                            className="mt-2 text-sm text-destructive"
+                          >
+                            {errors.methods}
+                          </p>
+                        )}
+                      </fieldset>
+                      {methods.includes("other") &&
+                        field(
+                          "otherMethod",
+                          "Metode lainnya",
+                          "Tuliskan metode yang digunakan",
+                          200,
+                        )}
+                    </>
+                  )}
+                  {error && (
+                    <p
+                      role="alert"
+                      className="rounded-md bg-destructive/5 p-3 text-sm text-destructive"
+                    >
+                      {error}
+                    </p>
+                  )}
+                  <div className="flex items-center justify-between gap-4 pt-4">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="h-11 rounded-md text-muted-foreground"
+                      onClick={() => goTo(0)}
+                      disabled={step === 0}
+                    >
+                      <ArrowLeft aria-hidden="true" /> Kembali
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="h-11 rounded-md px-6"
+                      disabled={submission.isPending}
+                    >
+                      {submission.isPending ? (
+                        <>
+                          <LoaderCircle className="motion-safe:animate-spin" aria-hidden="true" />{" "}
+                          Menyimpan…
+                        </>
+                      ) : step === 1 ? (
+                        <>
+                          Kirim data <ArrowRight aria-hidden="true" />
+                        </>
+                      ) : (
+                        <>
+                          Lanjut <ArrowRight aria-hidden="true" />
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </fieldset>
+              </form>
             </>
           )}
         </m.section>

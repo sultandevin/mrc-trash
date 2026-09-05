@@ -12,7 +12,6 @@ export const submitResponse = createServerFn({ method: "POST" })
         .insert(submissions)
         .values({
           ...data,
-          address: `${data.roadName}, Blok ${data.block}, RT ${data.rt}/RW ${data.rw}`,
           otherMethod: data.methods.includes("other") ? data.otherMethod : null,
           createdAt: new Date().toISOString(),
         })
