@@ -8,7 +8,8 @@ const runtimeEnv = {
 
 export const env = createEnv({
   server: {
-    DATABASE_URL: z.string().min(1),
+    TURSO_DATABASE_URL: z.string().min(1),
+    TURSO_AUTH_TOKEN: z.string().min(1).optional(),
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   },
   runtimeEnv: runtimeEnv,

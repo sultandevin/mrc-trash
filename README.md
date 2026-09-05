@@ -10,7 +10,7 @@ Migration `0002_busy_purifiers.sql` adds separate address columns without changi
 
 Edit the three placeholder methods in `apps/web/src/features/submissions/schema.ts` (including the enum if changing IDs).
 
-For local development, set `DATABASE_URL=file:../../local.db` in `apps/web/.env`, then run `bun run --cwd packages/db db:migrate` and `bun run dev:web`. The relative database path resolves to the repository root from both the web and database packages. For hosting, configure a persistent database URL and apply the migrations before starting the app.
+For local development, set `TURSO_DATABASE_URL=file:../../local.db` in `apps/web/.env`, then run `bun run --cwd packages/db db:migrate` and `bun run dev:web`. The relative database path resolves to the repository root from both the web and database packages; `TURSO_AUTH_TOKEN` can be omitted for a local file. For hosting, configure both the Turso database URL and authentication token, then apply the migrations before starting the app.
 
 ## Features
 

@@ -10,7 +10,7 @@ import {
 } from "../apps/web/src/features/admin/password.server";
 
 const directory = await mkdtemp(join(tmpdir(), "mom-admin-test-"));
-process.env.DATABASE_URL = `file:${join(directory, "test.db")}`;
+process.env.TURSO_DATABASE_URL = `file:${join(directory, "test.db")}`;
 const sqlite = new Database(join(directory, "test.db"));
 const migrationDirectory = new URL("../packages/db/src/migrations/", import.meta.url);
 for (const name of (await readdir(migrationDirectory))

@@ -6,7 +6,8 @@ import * as schema from "./schema";
 
 export function createDb() {
   const client = createClient({
-    url: env.DATABASE_URL,
+    url: env.TURSO_DATABASE_URL,
+    authToken: env.TURSO_AUTH_TOKEN,
   });
 
   return drizzle({ client, schema });
