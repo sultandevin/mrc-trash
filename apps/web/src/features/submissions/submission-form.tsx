@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { AnimatePresence, useReducedMotion } from "motion/react";
 import * as m from "motion/react-m";
-import { ArrowLeft, ArrowRight, Check, LoaderCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, ChevronDown, LoaderCircle } from "lucide-react";
 import { Button } from "@mom/ui/components/button";
 import { Checkbox } from "@mom/ui/components/checkbox";
 import { Input } from "@mom/ui/components/input";
@@ -223,31 +223,38 @@ export function SubmissionForm({ save }: { save: Save }) {
                 <fieldset disabled={submission.isPending} className="space-y-6">
                   {step === 0 && (
                     <>
-                      {field("name", "Nama", "Nama lengkap Anda", 120)}
-                      {field("address", "Nomor rumah + jalan", "Contoh: No. 12, Jalan Melati", 260)}
+                      {field("name", "Nama lengkap", "Masukkan nama lengkap", 120)}
+                      {field("address", "Alamat rumah", "Contoh: Jalan Melati No. 12", 260)}
                       <div className="space-y-2.5">
-                        <Label htmlFor="rt">RT</Label>
-                        <select
-                          id="rt"
-                          name="rt"
-                          value={values.rt}
-                          required
-                          aria-invalid={!!errors.rt}
-                          aria-describedby={errors.rt ? "rt-error" : undefined}
-                          className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/50 h-10 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50"
-                          onChange={(event) =>
-                            setValues((previous) => ({ ...previous, rt: event.target.value }))
-                          }
-                        >
-                          <option value="">Pilih RT</option>
-                          {Array.from({ length: 16 }, (_, index) =>
-                            String(index + 1).padStart(2, "0"),
-                          ).map((rt) => (
-                            <option key={rt} value={rt}>
-                              RT {rt}
-                            </option>
-                          ))}
-                        </select>
+                        <Label htmlFor="rt">Rukun tetangga (RT)</Label>
+                        <div className="relative">
+                          <select
+                            id="rt"
+                            name="rt"
+                            value={values.rt}
+                            required
+                            aria-invalid={!!errors.rt}
+                            aria-describedby={errors.rt ? "rt-error" : undefined}
+                            className="border-input bg-card text-foreground focus-visible:border-ring focus-visible:ring-ring/30 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 h-12 w-full appearance-none rounded-md border px-3 py-1 pr-11 text-base shadow-none outline-none transition-[color,box-shadow,background-color] focus-visible:ring-3 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+                            onChange={(event) =>
+                              setValues((previous) => ({ ...previous, rt: event.target.value }))
+                            }
+                          >
+                            <option value="">Pilih wilayah RT</option>
+                            {Array.from({ length: 16 }, (_, index) =>
+                              String(index + 1).padStart(2, "0"),
+                            ).map((rt) => (
+                              <option key={rt} value={rt}>
+                                RT {rt}
+                              </option>
+                            ))}
+                          </select>
+                          <ChevronDown
+                            className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-muted-foreground"
+                            strokeWidth={1.5}
+                            aria-hidden="true"
+                          />
+                        </div>
                         {errors.rt && (
                           <p id="rt-error" role="alert" className="text-sm text-destructive">
                             {errors.rt}
