@@ -2,17 +2,6 @@ import "dotenv/config";
 import { createEnv } from "@t3-oss/env-core";
 import { z } from "zod";
 
-function getVercelOrigin() {
-  const vercelUrl =
-    process.env.VERCEL_ENV === "production"
-      ? (process.env.VERCEL_PROJECT_PRODUCTION_URL ?? process.env.VERCEL_URL)
-      : (process.env.VERCEL_URL ?? process.env.VERCEL_PROJECT_PRODUCTION_URL);
-  if (!vercelUrl) return undefined;
-  return vercelUrl.startsWith("http") ? vercelUrl : `https://${vercelUrl}`;
-}
-
-const vercelOrigin = getVercelOrigin();
-
 const runtimeEnv = {
   ...process.env,
 };

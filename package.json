@@ -25,6 +25,7 @@
   },
   "type": "module",
   "scripts": {
+    "admin:setup": "tsx scripts/admin-password.ts",
     "dev": "turbo run dev",
     "build": "turbo run build",
     "check-types": "turbo run check-types",
